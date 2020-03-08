@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'rest_framework',
     'users', #app that provides the application server
+    'actions', #app that allows the given actions
 ]
 
 MIDDLEWARE = [
