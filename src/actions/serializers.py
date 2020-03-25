@@ -13,7 +13,12 @@ class ItemSerializer(serializers.ModelSerializer):
         read_only_fields = ['ItemCode','FirstRegDate'] #both set to have automatically generated values
     
     def create(self, validated_data):
-        return Item.objects.create(**validated_data, FirstRegDate=datetime.datetime.now())
+        newItem=Item.objects.create(**validated_data, FirstRegDate=datetime.datetime.now(),ItemCode="" )
+        
+        newItem.ItemCode='STK'+str(newItem.id) #update the itemcode to be STK+id
+        newItem.save()
+        
+        return newItem
 
 
 class AuctionSerializer(serializers.ModelSerializer):
@@ -30,13 +35,16 @@ class AuctionSerializer(serializers.ModelSerializer):
 
         #create a new item using the data
         newItem=Item.objects.create(
-        ItemCode=Item.getNextItemCode(), #newItemData['ItemCode'],
+        ItemCode="", #set it to empty for now
         Title=newItemData['Title'],
         ItemCondition=newItemData['ItemCondition'],
         Description=newItemData['Description'],
         FirstRegDate=datetime.datetime.now()
         )
-          
+        
+        newItem.ItemCode='STK'+str(newItem.id) #update the itemcode to be STK+id
+        newItem.save()
+        
         #create a new auction using the item
         auction=Auction.objects.create(Item=newItem,**validated_data)
         
