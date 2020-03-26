@@ -26,7 +26,8 @@ class AuctionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Auction
-        fields = ('Item','CreatedByUsername','Brief','StartDate','EndDate','MinimumPrice')
+        fields = ('Item','CreatedByUsername','CreatedByUserID','Brief','StartDate','EndDate','MinimumPrice')
+        read_only_fields = ['CreatedByUsername','CreatedByUserID'] 
         
     ##TO-DO (automatically detect createbyusername) 
     def create(self, validated_data):
@@ -35,7 +36,7 @@ class AuctionSerializer(serializers.ModelSerializer):
 
         #create a new item using the data
         newItem=Item.objects.create(
-        ItemCode="", #set it to empty for now
+        ItemCode="", #set itemcode to empty for now
         Title=newItemData['Title'],
         ItemCondition=newItemData['ItemCondition'],
         Description=newItemData['Description'],
@@ -45,8 +46,8 @@ class AuctionSerializer(serializers.ModelSerializer):
         newItem.ItemCode='STK'+str(newItem.id) #update the itemcode to be STK+id
         newItem.save()
         
-        #create a new auction using the item
-        auction=Auction.objects.create(Item=newItem,**validated_data)
+        #create a new auction using the item, and requesting user
+        auction=Auction.objects.create(Item=newItem,CreatedByUsername=self.context["request"].user.username,CreatedByUserID=self.context["request"].user,**validated_data)
         
         return auction
         #return Auction.objects.create(**validated_data, CreatedByUsername=)
@@ -62,7 +63,7 @@ class BidSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         ##validation here or in validators?
-        return Item.objects.create(**validated_data, PlacedDate=datetime.datetime.now())
+        return Bid.objects.create(**validated_data, PlacedDate=datetime.datetime.now())
  
  
   

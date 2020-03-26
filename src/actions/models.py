@@ -28,16 +28,17 @@ class Bid(models.Model):
     
 class Auction(models.Model):
     #AuctionID - automatic
-    Item=models.ForeignKey(Item, on_delete=models.CASCADE) #do not allow deletion of item before auction
-    CreatedByUsername=models.ForeignKey(User, on_delete=models.PROTECT) 
+    Item=models.ForeignKey(Item, on_delete=models.PROTECT) #do not allow deletion of item before auction
+    CreatedByUserID=models.ForeignKey(User, on_delete=models.PROTECT) 
+    CreatedByUsername=models.CharField(max_length=200)
     Brief=models.TextField()
     StartDate=models.DateTimeField()
     EndDate=models.DateTimeField()
     MinimumPrice=models.FloatField()
-    WinnerBid=models.ForeignKey(Bid, null=True,blank=True, on_delete=models.CASCADE)
+    WinnerBid=models.ForeignKey(Bid, null=True,blank=True, on_delete=models.PROTECT)
     
     def __str__(self):
-        return "AuctionID" +str(self.id)
+        return "AuctionID " +str(self.id)
     
     
 
