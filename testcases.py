@@ -7,67 +7,137 @@ token_url="http://193.61.36.131:8000/authentication/token/"
 
 auctions_url="http://193.61.36.131:8000/actions/auction/"
 
-
-create_user_flag=0 #to-do : api call here such that it resets and removes all tokens
-
 olga={"username": "olga", "password": "olga123"}
 nick={"username": "nick", "password": "nick123"}
 mary={"username": "mary", "password": "mary123"}
+admin={"username": "bkr", "password": "bkr"}
+###########################HELPER FUNCTIONS############################
+
+def prettyResponse(resp):
+    return (json.dumps(resp.json(), indent=2))
+
+def resetApplication(): #deletes all auctions, access tokens, users
+    #get new token for admin user
+    token=requests.post(token_url,data=admin).json()["access_token"]
+
+    #del all auctions (and items)
+    requests.delete(auctions_url,headers= {'Authorization':'Bearer '+token})   
+ 
+    #delete all users and their tokens
+    #todo
+
+###########################PRE-TEST ACTIONS############################
+
+resetApplication()
+
+###########################TEST CASES###################################
 
 print("############-TEST CASE 1-############")
 
-if(create_user_flag==1):
-    olga_response=requests.post(reg_url,data=olga).json()
-    nick_response=requests.post(reg_url,data=nick).json()
-    mary_response=requests.post(reg_url,data=mary).json()
-    #olga_response=requests.post(revoke_url, data={"token":"iGeEjKoNUHhOIu1J4DF39yejIljE9G"}).json()
+olga_response=requests.post(reg_url,data=olga)
+nick_response=requests.post(reg_url,data=nick)
+mary_response=requests.post(reg_url,data=mary)
 
-    print("\nOlga Response: ",olga_response)
-    print("\nNick Response: ",nick_response)
-    print("\nMary Response: ",mary_response)
+print("\nOlga Response: ",prettyResponse(olga_response))
+print("\nNick Response: ",prettyResponse(nick_response))
+print("\nMary Response: ",prettyResponse(mary_response))
 
-print("############-TEST CASE 2-############")
+print("\n############-TEST CASE 2-############")
 
-olga_response=requests.post(token_url,data=olga).json()
-nick_response=requests.post(token_url,data=nick).json()
-mary_response=requests.post(token_url,data=mary).json()
+olga_response=requests.post(token_url,data=olga)
+nick_response=requests.post(token_url,data=nick)
+mary_response=requests.post(token_url,data=mary)
 
+print("\nOlga Response: ",prettyResponse(olga_response))
+print("\nNick Response: ",prettyResponse(nick_response))
+print("\nMary Response: ",prettyResponse(mary_response))
 
-print("\nOlga Response:",olga_response)
-print("\nNick Response:",nick_response)
-print("\nMary Response:",mary_response)
-
-olga_token=str(olga_response['access_token'])
-nick_token=str(nick_response['access_token'])
-mary_token=str(mary_response['access_token'])
+olga_token=str(olga_response.json()['access_token'])
+nick_token=str(nick_response.json()['access_token'])
+mary_token=str(mary_response.json()['access_token'])
 
 
 print("\n############-TEST CASE 3-############")
 
-olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+""}).json()
-print("Olga request without token:\n "+str(olga_response))
+olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+""})
+print("\nResponse of Olga request without token:\n "+prettyResponse(olga_response))
 
 olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+olga_token})
 
-print("Olga request with token:\n "+json.dumps(olga_response.json(), indent=2))
+print("\nResponse of Olga request with token:\n "+prettyResponse(olga_response))
 
 print("\n############-TEST CASE 4-############")
 
+##OLGA AUCTIONING HER ITEM
 olga_auction={
     "Item": {
         "Title": "Olga's Shirt",
         "ItemCondition": "good",
         "Description": "D&C shirt, hasn't been worn in years"
     },
-    #"CreatedByUsername": 1,
     "Brief": "Serious buyers only",
-    "StartDate": str(datetime.datetime.now()),
-    "EndDate": str(datetime.datetime(2020, 3, 27, 23, 35, 14, 496045)),
+    "StartDate": str(datetime.datetime.now()),                          #todays date
+    "EndDate": str(datetime.datetime.now()+datetime.timedelta(days=1)), #todays date +1 day
     "MinimumPrice": 20
 }
 
 
 olga_response=requests.post(auctions_url,json=olga_auction, headers={'Content-type': 'application/json','Authorization':'Bearer '+olga_token})
 
-print(olga_response.text)
-print(olga_response.request.body)
+print("\nResponse of Olga adding new auction: ")
+print(prettyResponse(olga_response))
+
+print("\n############-TEST CASE 5-############")
+
+##NICK AUCTIONING HIS ITEM
+nick_auction={
+    "Item": {
+        "Title": "Xbox 360 Controller",
+        "ItemCondition": "poor",
+        "Description": "left joystick doesn't work, salvageable for other parts"
+    },
+    "Brief": "Buyer must be willing to pick up item from Croydon",
+    "StartDate": str(datetime.datetime.now()),                          #todays date
+    "EndDate": str(datetime.datetime.now()+datetime.timedelta(days=1)), #todays date +1 day
+    "MinimumPrice": 30
+}
+
+
+nick_response=requests.post(auctions_url,json=nick_auction, headers={'Content-type': 'application/json','Authorization':'Bearer '+nick_token})
+
+print("\nResponse of Nick adding new auction: ")
+print(prettyResponse(nick_response))
+
+print("\n############-TEST CASE 6-############")
+
+##MARY AUCTIONING HER ITEM
+mary_auction={
+    "Item": {
+        "Title": "Bedside Lamp",
+        "ItemCondition": "good",
+        "Description": "Cara Glass Touch Lamps, Set of 2 - connects to WiFi and controllable with phone"
+    },
+    "Brief": "",
+    "StartDate": str(datetime.datetime.now()),                          #todays date
+    "EndDate": str(datetime.datetime.now()+datetime.timedelta(days=1)), #todays date +1 day
+    "MinimumPrice": 40
+}
+
+
+mary_response=requests.post(auctions_url,json=mary_auction, headers={'Content-type': 'application/json','Authorization':'Bearer '+mary_token})
+
+print("\nResponse of Mary adding new auction: ")
+print(prettyResponse(mary_response))
+
+print("\n############-TEST CASE 7-############")
+
+##OLGA BROWSING AVAILABLE ITEMS
+olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+olga_token})
+
+print("\nOLGA BROWSING AVAILABLE ITEMS: ")
+print(prettyResponse(olga_response))
+
+nick_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+nick_token})
+
+print("\nNICK BROWSING AVAILABLE ITEMS: ")
+print(prettyResponse(nick_response))
