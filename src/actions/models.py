@@ -8,7 +8,7 @@ CONDITION_CHOICES = (
 )
 
 class Item(models.Model):
-    ItemCode=models.CharField(max_length=10)#, primary_key=True)
+    ItemCode=models.CharField(max_length=10)
     Title=models.CharField(max_length=50)
     Description=models.CharField(max_length=200)
     ItemCondition=models.CharField(max_length=5, choices=CONDITION_CHOICES,default='good') 
@@ -19,7 +19,7 @@ class Item(models.Model):
         
 class Bid(models.Model):
     Auction=models.ForeignKey('Auction',on_delete=models.PROTECT)
-    PlacedByUsername=models.ForeignKey(User, on_delete=models.PROTECT)
+    PlacedByUserID=models.ForeignKey(User, on_delete=models.PROTECT)
     PlacedDate=models.DateTimeField()
     BidPrice=models.FloatField()
           
@@ -31,11 +31,11 @@ class Auction(models.Model):
     Item=models.ForeignKey(Item, on_delete=models.PROTECT) #do not allow deletion of item before auction
     CreatedByUserID=models.ForeignKey(User, on_delete=models.PROTECT) 
     CreatedByUsername=models.CharField(max_length=200)
-    Brief=models.TextField()
+    Brief=models.TextField(blank=True)
     StartDate=models.DateTimeField()
     EndDate=models.DateTimeField()
     MinimumPrice=models.FloatField()
-    WinnerBid=models.ForeignKey(Bid, null=True,blank=True, on_delete=models.PROTECT)
+    WinnerBid=models.ForeignKey(Bid, null=True, on_delete=models.PROTECT)
     
     def __str__(self):
         return "AuctionID " +str(self.id)

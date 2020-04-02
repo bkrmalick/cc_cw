@@ -26,21 +26,20 @@ class AuctionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Auction
-        fields = ('Item','CreatedByUsername','CreatedByUserID','Brief','StartDate','EndDate','MinimumPrice')
+        fields = ('id','Item','CreatedByUsername','CreatedByUserID','Brief','StartDate','EndDate','MinimumPrice')
         read_only_fields = ['CreatedByUsername','CreatedByUserID'] 
-        
-    ##TO-DO (automatically detect createbyusername) 
+         
     def create(self, validated_data):
         #extract the item data from the request
         newItemData=validated_data.pop('Item') 
 
         #create a new item using the data
         newItem=Item.objects.create(
-        ItemCode="", #set itemcode to empty for now
-        Title=newItemData['Title'],
-        ItemCondition=newItemData['ItemCondition'],
-        Description=newItemData['Description'],
-        FirstRegDate=datetime.datetime.now()
+            ItemCode="", #set itemcode to empty for now
+            Title=newItemData['Title'],
+            ItemCondition=newItemData['ItemCondition'],
+            Description=newItemData['Description'],
+            FirstRegDate=datetime.datetime.now()
         )
         
         newItem.ItemCode='STK'+str(newItem.id) #update the itemcode to be STK+id
@@ -50,20 +49,24 @@ class AuctionSerializer(serializers.ModelSerializer):
         auction=Auction.objects.create(Item=newItem,CreatedByUsername=self.context["request"].user.username,CreatedByUserID=self.context["request"].user,**validated_data)
         
         return auction
-        #return Auction.objects.create(**validated_data, CreatedByUsername=)
+
+    
         
        
 class BidSerializer(serializers.ModelSerializer):
-    #ItemCode =serializers.CharField(max_length=10,read_only=True,validators=[UniqueValidator(queryset=Item.objects.all(), message="ItemCode already exists")])
     
     class Meta:
         model = Bid
-        fields = ('Auction','PlacedByUsername','PlacedDate','BidPrice')
-        #read_only_fields = ['PlaceByUsername'] #both set to have automatically generated values
+        fields = ('Auction','PlacedByUserID','PlacedDate','BidPrice')
+        read_only_fields = ['PlacedByUserID','PlacedDate'] #both set to have automatically generated values
     
     def create(self, validated_data):
-        ##validation here or in validators?
-        return Bid.objects.create(**validated_data, PlacedDate=datetime.datetime.now())
+        return Bid.objects.create(**validated_data, PlacedDate=datetime.datetime.now(),PlacedByUserID=self.context["request"].user )
  
- 
+    
+    def validate_Auction(self, value):
+    #https://www.django-rest-framework.org/api-guide/serializers/#field-level-validation
+        if(value.CreatedByUsername==str(self.context["request"].user)):
+            raise serializers.ValidationError("Cannot place bid on own auction")
+        return value   
   
