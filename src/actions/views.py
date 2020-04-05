@@ -16,7 +16,8 @@ class AuctionViewSet(viewsets.ModelViewSet):
     
     #override below method so that we can exclude users from viewing auctions created by themselves
     def get_queryset(self):
-        return Auction.objects.exclude(CreatedByUserID=self.request.user.id)
+       Auction.updateStatusOfAllAuctions()
+       return Auction.objects.all()
         
     def delete(self,request):  
         if(self.request.user.id==1): #if admin user

@@ -1,10 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import User
+from djmoney.models.fields import MoneyField
+from django.utils import timezone
+
 
 CONDITION_CHOICES = (
     ("poor","POOR"),
     ("good","GOOD"),
     ("new","NEW"),
+)
+
+AUCTION_STATUSES = (
+    ("pending","PENDING"),        #awaiting start date
+    ("live","LIVE"),              #open to offers
+    ("completed","COMPLETED"),    
+    ("cancelled","CANCELLED"),    
 )
 
 class Item(models.Model):
@@ -21,27 +31,48 @@ class Bid(models.Model):
     Auction=models.ForeignKey('Auction',on_delete=models.PROTECT)
     PlacedByUserID=models.ForeignKey(User, on_delete=models.PROTECT)
     PlacedDate=models.DateTimeField()
-    BidPrice=models.FloatField()
+    BidPrice=MoneyField(decimal_places=2,default=0,default_currency='GBP',max_digits=10,)
           
     def __str__(self):
-        return "bid on AuctionID"+str(self.Auction.id)+" by "+str(self.PlacedByUsername)
+        return "bid on "+str(self.Auction)+" by "+str(self.PlacedByUserID.username)
     
 class Auction(models.Model):
-    #AuctionID - automatic
     Item=models.ForeignKey(Item, on_delete=models.PROTECT) #do not allow deletion of item before auction
     CreatedByUserID=models.ForeignKey(User, on_delete=models.PROTECT) 
-    CreatedByUsername=models.CharField(max_length=200)
     Brief=models.TextField(blank=True)
     StartDate=models.DateTimeField()
     EndDate=models.DateTimeField()
-    MinimumPrice=models.FloatField()
+    MinimumPrice=MoneyField(decimal_places=2,default=0,default_currency='GBP',max_digits=10, blank=False)
+    Status=models.CharField(max_length=10, choices=AUCTION_STATUSES,default='default') 
     WinnerBid=models.ForeignKey(Bid, null=True, on_delete=models.PROTECT)
     
     def __str__(self):
         return "AuctionID " +str(self.id)
     
+    def updateStatusOfAllAuctions():
+        auctions=Auction.objects.all()
+        
+        for i in range(len(auctions)):
+            Auction.updateStatusOfAuction(auctions[i])
+            auctions[i].save()
     
-
+    def updateStatusOfAuction(auction):
+        now=timezone.localtime(timezone.now())
+        
+        if(auction.StartDate<=now and now<auction.EndDate):
+            auction.Status="LIVE"
+        elif(auction.EndDate<=now):
+            auction.Status="COMPLETED"
+            auction.WinnerBid=Auction.getWinningBid(auction)
+        else:
+            auction.Status="PENDING"
     
-
+    
+    def getWinningBid(auction):
+        if( len(Bid.objects.filter(Auction=auction))>0):
+            return Bid.objects.filter(Auction=auction).order_by('-BidPrice')[0] #max price bid
+        else:
+            return None
+        
+            
     
