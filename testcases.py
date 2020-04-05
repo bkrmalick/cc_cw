@@ -20,7 +20,7 @@ def resetApplication(): #deletes all auctions, access tokens, users
     #get new token for admin user
     token=requests.post(token_url,data=admin).json()["access_token"]
 
-    #del all auctions (and items)
+    #delete all auctions, items, and bids (only works with admin token) 
     requests.delete(auctions_url,headers= {'Authorization':'Bearer '+token})   
  
     #delete all users and their tokens
@@ -131,13 +131,12 @@ print(prettyResponse(mary_response))
 
 print("\n############-TEST CASE 7-############")
 
-##OLGA BROWSING AVAILABLE ITEMS
 olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+olga_token})
 
-print("\nOLGA BROWSING AVAILABLE ITEMS: ")
+print("\nOLGA BROWSING AUCTIONS: ")
 print(prettyResponse(olga_response))
 
 nick_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+nick_token})
 
-print("\nNICK BROWSING AVAILABLE ITEMS: ")
+print("\nNICK BROWSING AUCTIONS: ")
 print(prettyResponse(nick_response))
