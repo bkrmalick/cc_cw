@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
 from .models import Item, Auction,Bid
-from .serializers import ItemSerializer,AuctionSerializer,BidSerializer
+from .serializers import ItemSerializer,AuctionSerializer,BidSerializer,BidSerializerWithoutAuctionID
 
 
 class ItemViewSet(viewsets.ModelViewSet):
@@ -32,3 +32,7 @@ class AuctionViewSet(viewsets.ModelViewSet):
 class BidViewSet(viewsets.ModelViewSet):
     queryset = Bid.objects.all()
     serializer_class = BidSerializer
+    
+class BidViewSetReadyOnly(viewsets.ReadOnlyModelViewSet):
+    queryset = Bid.objects.all()
+    serializer_class = BidSerializerWithoutAuctionID

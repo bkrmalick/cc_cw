@@ -44,7 +44,7 @@ class Auction(models.Model):
     EndDate=models.DateTimeField()
     MinimumPrice=MoneyField(decimal_places=2,default=0,default_currency='GBP',max_digits=10, blank=False)
     Status=models.CharField(max_length=10, choices=AUCTION_STATUSES,default='default') 
-    WinnerBid=models.ForeignKey(Bid, null=True, on_delete=models.PROTECT)
+    WinnerBid=models.ForeignKey(Bid, null=True,default=None, on_delete=models.PROTECT, blank=True)
     
     def __str__(self):
         return "AuctionID " +str(self.id)
@@ -73,6 +73,8 @@ class Auction(models.Model):
             return Bid.objects.filter(Auction=auction).order_by('-BidPrice')[0] #max price bid
         else:
             return None
+            
+            
         
             
     

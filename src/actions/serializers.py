@@ -3,15 +3,14 @@ from rest_framework.validators import UniqueValidator
 from .models import Item, Auction, Bid
 from django.utils import timezone
 
-
 class ItemSerializer(serializers.ModelSerializer):
-    #validation to ensure code input is unique
-    ItemCode =serializers.CharField(max_length=10,read_only=True,validators=[UniqueValidator(queryset=Item.objects.all(), message="ItemCode already exists")])
+    #validation to ensure ItemCode is unique
+    #ItemCode =serializers.CharField(max_length=10,read_only=True,validators=[UniqueValidator(queryset=Item.objects.all(), message="ItemCode already exists")])
     
     class Meta:
         model = Item
         fields = ('ItemCode','Title','ItemCondition','Description', 'FirstRegDate')
-        read_only_fields = ['ItemCode','FirstRegDate'] #both set to have automatically generated values
+        read_only_fields = ['ItemCode','FirstRegDate'] #both set to have automatically generated values, so don't need input
     
     def create(self, validated_data):
         newItem=Item.objects.create(**validated_data, FirstRegDate=timezone.localtime(timezone.now()),ItemCode="" )
@@ -23,38 +22,59 @@ class ItemSerializer(serializers.ModelSerializer):
 
        
 class BidSerializer(serializers.ModelSerializer):
+    PlacedByUsername=serializers.SerializerMethodField('get_PlacedByUsername') #computed field 
     
     class Meta:
         model = Bid
-        fields = ('Auction','PlacedByUserID','PlacedDate','BidPrice')
-        read_only_fields = ['PlacedByUserID','PlacedDate'] #both set to have automatically generated values
+        fields = ('id','Auction','PlacedByUsername','PlacedDate','BidPrice')
+        read_only_fields = ['PlacedByUsername','PlacedDate'] #both set to have automatically generated values, so don't need input
     
     def create(self, validated_data):
         return Bid.objects.create(**validated_data, PlacedDate=timezone.localtime(timezone.now()),PlacedByUserID=self.context["request"].user )
  
-    
-    def validate_Auction(self, value):
-    #https://www.django-rest-framework.org/api-guide/serializers/#field-level-validation
-        if(value.CreatedByUserID.username==str(self.context["request"].user)):
-            raise serializers.ValidationError("Cannot place bid on own auction")
-        return value
-
     def validate(self, attrs):
+        #update status of auction before performing any validation
+        Auction.updateStatusOfAuction(attrs['Auction'])
+        
+        if(attrs['Auction'].Status!="LIVE"):
+            raise serializers.ValidationError("Auction is not LIVE")
+        
+        #https://www.django-rest-framework.org/api-guide/serializers/#field-level-validation
+        #if(attrs['Auction'].CreatedByUserID.username==str(self.context["request"].user)):
+        #    raise serializers.ValidationError("Cannot place bid on own auction")
+    
         try:        
             if(attrs['BidPrice']==""):
                 raise serializers.ValidationError("Bid Price cannot be null")
-            elif(attrs['BidPrice']<attrs['Auction'].MinimumPrice):
+            elif(attrs['BidPrice']<attrs['Auction'].MinimumPrice.amount):
                 raise serializers.ValidationError("Bid Price needs to be greater than "+str(attrs['Auction'].MinimumPrice))
         except KeyError:
-            raise serializers.ValidationError("Minimum Price cannot be null")
+            raise serializers.ValidationError("Bid Price and Auction cannot be null")
+        
+        return attrs
+        
+    def get_PlacedByUsername(self, obj):
+        return obj.PlacedByUserID.username 
+
+        
+class BidSerializerWithoutAuctionID(serializers.ModelSerializer):
+    PlacedByUsername=serializers.SerializerMethodField('get_PlacedByUsername') #computed field 
+    
+    class Meta:
+        model = Bid
+        fields = ('id','PlacedByUsername','PlacedDate','BidPrice')
+        #read_only_fields = ['id','PlacedByUsername','PlacedDate','BidPrice'] #set all to read-only
+    
+    def get_PlacedByUsername(self, obj):
+        return obj.PlacedByUserID.username 
         
         
-  
 
 class AuctionSerializer(serializers.ModelSerializer):
     Item=ItemSerializer()
-    CreatedByUsername=serializers.SerializerMethodField('get_CreatedByUsername') #computed field 
-
+    CreatedByUsername=serializers.SerializerMethodField('get_CreatedByUsername') 
+    WinnerBid=serializers.SerializerMethodField('get_WinnerBid') 
+    
     class Meta:
         model = Auction
         fields = ('id','Item','Status','Brief','StartDate','EndDate','MinimumPrice','CreatedByUsername','WinnerBid')
@@ -87,7 +107,11 @@ class AuctionSerializer(serializers.ModelSerializer):
         
     def get_CreatedByUsername(self, obj):
         return obj.CreatedByUserID.username 
-
+        
+    def get_WinnerBid(self, obj):
+        return BidSerializerWithoutAuctionID(obj.WinnerBid).data
+        
+        
     def validate(self, attrs):
         now =timezone.localtime(timezone.now())
         
