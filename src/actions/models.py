@@ -49,6 +49,7 @@ class Auction(models.Model):
     def __str__(self):
         return "AuctionID " +str(self.id)
     
+    #update statuses of all auctions acc. to StartDate and EndDate
     def updateStatusOfAllAuctions():
         auctions=Auction.objects.all()
         
@@ -56,6 +57,7 @@ class Auction(models.Model):
             Auction.updateStatusOfAuction(auctions[i])
             auctions[i].save()
     
+    #update status of a single auction acc. to StartDate and EndDate
     def updateStatusOfAuction(auction):
         now=timezone.localtime(timezone.now())
         
@@ -67,7 +69,7 @@ class Auction(models.Model):
         else:
             auction.Status="PENDING"
     
-    
+    #get the winning bid for a particular auction
     def getWinningBid(auction):
         if( len(Bid.objects.filter(Auction=auction))>0):
             return Bid.objects.filter(Auction=auction).order_by('-BidPrice')[0] #max price bid

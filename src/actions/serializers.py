@@ -5,9 +5,7 @@ from django.utils import timezone
 import datetime
 
 class ItemSerializer(serializers.ModelSerializer):
-    #validation to ensure ItemCode is unique
-    #ItemCode =serializers.CharField(max_length=10,read_only=True,validators=[UniqueValidator(queryset=Item.objects.all(), message="ItemCode already exists")])
-    
+
     class Meta:
         model = Item
         fields = ('id','ItemCode','Title','ItemCondition','Description', 'FirstRegDate')
@@ -23,7 +21,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
        
 class BidSerializer(serializers.ModelSerializer):
-    PlacedByUsername=serializers.SerializerMethodField('get_PlacedByUsername') #computed field 
+    PlacedByUsername=serializers.SerializerMethodField('get_PlacedByUsername') #calculate field from the get_PlacedByUsername() method
     
     class Meta:
         model = Bid
@@ -34,7 +32,7 @@ class BidSerializer(serializers.ModelSerializer):
         return Bid.objects.create(**validated_data, PlacedDate=timezone.localtime(timezone.now()),PlacedByUserID=self.context["request"].user )
  
     def validate(self, attrs):
-        #update status of auction before performing any validation
+        #update status of auction before performing any validation 
         Auction.updateStatusOfAuction(attrs['Auction'])
         
         if(attrs['Auction'].Status!="LIVE"):
@@ -43,13 +41,14 @@ class BidSerializer(serializers.ModelSerializer):
         if(attrs['Auction'].CreatedByUserID.username==str(self.context["request"].user)):
             raise serializers.ValidationError("Cannot place bid on own auction")
     
+        #ensure that BidPrice was passed in the data and that it wasn't below the minimum value required
         try:        
             if(attrs['BidPrice']==""):
                 raise serializers.ValidationError("Bid Price cannot be null")
             elif(attrs['BidPrice']<attrs['Auction'].MinimumPrice.amount):
                 raise serializers.ValidationError("Bid Price needs to be greater than "+str(attrs['Auction'].MinimumPrice.amount)+" "+str(attrs['Auction'].MinimumPrice.currency))
         except KeyError:
-            raise serializers.ValidationError("Bid Price and Auction cannot be null")
+            raise serializers.ValidationError("Bid Price or Auction cannot be null")
         
         return attrs
         
@@ -58,13 +57,13 @@ class BidSerializer(serializers.ModelSerializer):
 
         
 class BidSerializerWithoutAuctionID(serializers.ModelSerializer):
-    PlacedByUsername=serializers.SerializerMethodField('get_PlacedByUsername') #computed field 
+    PlacedByUsername=serializers.SerializerMethodField('get_PlacedByUsername') #calculate field from the get_PlacedByUsername() method
     
     class Meta:
         model = Bid
         fields = ('id','PlacedByUsername','PlacedDate','BidPrice')
-        #read_only_fields = ['id','PlacedByUsername','PlacedDate','BidPrice'] #set all to read-only
-    
+        read_only_fields = ['id','PlacedByUsername','PlacedDate','BidPrice'] #set all to read-only
+        
     def get_PlacedByUsername(self, obj):
         return obj.PlacedByUserID.username 
         
@@ -72,13 +71,13 @@ class BidSerializerWithoutAuctionID(serializers.ModelSerializer):
 
 class AuctionSerializer(serializers.ModelSerializer):
     Item=ItemSerializer()
-    CreatedByUsername=serializers.SerializerMethodField('get_CreatedByUsername') 
-    WinnerBid=serializers.SerializerMethodField('get_WinnerBid') 
+    CreatedByUsername=serializers.SerializerMethodField('get_CreatedByUsername') #calculate field from the get_PlacedByUsername() method
+    WinnerBid=serializers.SerializerMethodField('get_WinnerBid') #calculate field from the get_WinnerBid() method
     
     class Meta:
         model = Auction
         fields = ('id','Item','Status','Brief','StartDate','EndDate','MinimumPrice','CreatedByUsername','WinnerBid')
-        read_only_fields = ['CreatedByUsername','Status','WinnerBid'] 
+        read_only_fields = ['CreatedByUsername','Status','WinnerBid'] #these are automatically populated in the create method
          
     def create(self, validated_data):
         #extract the item data from the request
@@ -100,7 +99,7 @@ class AuctionSerializer(serializers.ModelSerializer):
         #create a new auction using the item, and requesting user
         auction=Auction.objects.create(Item=newItem,Status="pending",CreatedByUserID=self.context["request"].user,**validated_data)
        
-        #update status acc to dates
+        #update auction status acc to dates
         Auction.updateStatusOfAuction(auction)
         
         return auction
@@ -120,9 +119,10 @@ class AuctionSerializer(serializers.ModelSerializer):
         
         if(attrs['EndDate']<attrs['StartDate']):
             raise serializers.ValidationError("EndDate cannot be lesser than StartDate")
-        if((now-attrs['StartDate']) > datetime.timedelta(minutes=1)): #if the time difference between now and the startdate is greater than 1 minute
+        if((now-attrs['StartDate']) > datetime.timedelta(minutes=1)): #only allow for auctions with startdate in the future OR within the past minute (to allow for delay between client request and server processing)
             raise serializers.ValidationError("StartDate cannot be in the past")
         
+        #ensure that MinimumPrice was passed in the data 
         try:        
             if(attrs['MinimumPrice']==""):
                 raise serializers.ValidationError("Minimum Price cannot be null")
