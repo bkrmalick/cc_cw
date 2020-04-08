@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import Item, Auction, Bid
 from django.utils import timezone
+import datetime
 
 class ItemSerializer(serializers.ModelSerializer):
     #validation to ensure ItemCode is unique
@@ -9,7 +10,7 @@ class ItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Item
-        fields = ('ItemCode','Title','ItemCondition','Description', 'FirstRegDate')
+        fields = ('id','ItemCode','Title','ItemCondition','Description', 'FirstRegDate')
         read_only_fields = ['ItemCode','FirstRegDate'] #both set to have automatically generated values, so don't need input
     
     def create(self, validated_data):
@@ -39,15 +40,14 @@ class BidSerializer(serializers.ModelSerializer):
         if(attrs['Auction'].Status!="LIVE"):
             raise serializers.ValidationError("Auction is not LIVE")
         
-        #https://www.django-rest-framework.org/api-guide/serializers/#field-level-validation
-        #if(attrs['Auction'].CreatedByUserID.username==str(self.context["request"].user)):
-        #    raise serializers.ValidationError("Cannot place bid on own auction")
+        if(attrs['Auction'].CreatedByUserID.username==str(self.context["request"].user)):
+            raise serializers.ValidationError("Cannot place bid on own auction")
     
         try:        
             if(attrs['BidPrice']==""):
                 raise serializers.ValidationError("Bid Price cannot be null")
             elif(attrs['BidPrice']<attrs['Auction'].MinimumPrice.amount):
-                raise serializers.ValidationError("Bid Price needs to be greater than "+str(attrs['Auction'].MinimumPrice))
+                raise serializers.ValidationError("Bid Price needs to be greater than "+str(attrs['Auction'].MinimumPrice.amount)+" "+str(attrs['Auction'].MinimumPrice.currency))
         except KeyError:
             raise serializers.ValidationError("Bid Price and Auction cannot be null")
         
@@ -109,7 +109,10 @@ class AuctionSerializer(serializers.ModelSerializer):
         return obj.CreatedByUserID.username 
         
     def get_WinnerBid(self, obj):
-        return BidSerializerWithoutAuctionID(obj.WinnerBid).data
+        if(obj.WinnerBid == None):
+            return None
+        else:
+            return BidSerializerWithoutAuctionID(obj.WinnerBid).data
         
         
     def validate(self, attrs):
@@ -117,8 +120,9 @@ class AuctionSerializer(serializers.ModelSerializer):
         
         if(attrs['EndDate']<attrs['StartDate']):
             raise serializers.ValidationError("EndDate cannot be lesser than StartDate")
-        if(attrs['StartDate']<now):
+        if((now-attrs['StartDate']) > datetime.timedelta(minutes=1)): #if the time difference between now and the startdate is greater than 1 minute
             raise serializers.ValidationError("StartDate cannot be in the past")
+        
         try:        
             if(attrs['MinimumPrice']==""):
                 raise serializers.ValidationError("Minimum Price cannot be null")

@@ -44,7 +44,7 @@ class Auction(models.Model):
     EndDate=models.DateTimeField()
     MinimumPrice=MoneyField(decimal_places=2,default=0,default_currency='GBP',max_digits=10, blank=False)
     Status=models.CharField(max_length=10, choices=AUCTION_STATUSES,default='default') 
-    WinnerBid=models.ForeignKey(Bid, null=True,default=None, on_delete=models.PROTECT, blank=True)
+    WinnerBid=models.ForeignKey(Bid, null=True,default=None, on_delete=models.SET_NULL, blank=True) #on_delete set null, otherwise unable to delete auction as Auction and Bid table have cyclic dependency/foreign keys
     
     def __str__(self):
         return "AuctionID " +str(self.id)
