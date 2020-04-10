@@ -23,8 +23,8 @@ class AuctionViewSet(viewsets.ModelViewSet):
     def delete(self,request):  
         if(self.request.user.id==1): #if admin user
             Bid.objects.all().delete()
-            Auction.objects.exclude(id=251).delete() #delete all auctions but the test one
-            Item.objects.exclude(id=278).delete()    #delete all items but the test one
+            Auction.objects.exclude(id=267).delete() #delete all auctions but the test one
+            Item.objects.exclude(id=294).delete()    #delete all items but the test one
             User.objects.exclude(id=1).delete()      #delete all users but the admin
             return Response("All auctions, items and bids deleted.", status=status.HTTP_200_OK)
         else:

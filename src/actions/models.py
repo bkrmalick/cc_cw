@@ -80,3 +80,10 @@ class Auction(models.Model):
         
             
     
+    
+    
+    
+    
+    
+    
+    
