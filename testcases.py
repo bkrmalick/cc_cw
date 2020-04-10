@@ -47,9 +47,9 @@ olga_response=requests.post(reg_url,data=olga)
 nick_response=requests.post(reg_url,data=nick)
 mary_response=requests.post(reg_url,data=mary)
 
-print("\nOlga Response: ",prettyResponse(olga_response))
-print("\nNick Response: ",prettyResponse(nick_response))
-print("\nMary Response: ",prettyResponse(mary_response))
+print("\nOlga response on registration: ",prettyResponse(olga_response))
+print("\nNick response on registration: ",prettyResponse(nick_response))
+print("\nMary response on registration: ",prettyResponse(mary_response))
 
 print("\n############-TEST CASE 2-############")
 
@@ -57,9 +57,9 @@ olga_response=requests.post(token_url,data=olga)
 nick_response=requests.post(token_url,data=nick)
 mary_response=requests.post(token_url,data=mary)
 
-print("\nOlga Response: ",prettyResponse(olga_response))
-print("\nNick Response: ",prettyResponse(nick_response))
-print("\nMary Response: ",prettyResponse(mary_response))
+print("\nOlga response on token request: ",prettyResponse(olga_response))
+print("\nNick response on token request: ",prettyResponse(nick_response))
+print("\nMary response on token request: ",prettyResponse(mary_response))
 
 olga_token=str(olga_response.json()['access_token'])
 nick_token=str(nick_response.json()['access_token'])
@@ -69,11 +69,11 @@ mary_token=str(mary_response.json()['access_token'])
 print("\n############-TEST CASE 3-############")
 
 olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+""})
-print("\nResponse of Olga request without token:\n "+prettyResponse(olga_response))
+print("\nResponse of Olga GET-ing auctions without token:\n "+prettyResponse(olga_response))
 
 olga_response=requests.get(auctions_url, headers= {'Authorization':'Bearer '+olga_token})
 
-print("\nResponse of Olga request with token:\n "+prettyResponse(olga_response))
+print("\nResponse of Olga GET-ing auctions with token:\n "+prettyResponse(olga_response))
 
 print("\n############-TEST CASE 4-############")
 
@@ -194,11 +194,11 @@ print("\n############-TEST CASE 11-############")
 print("Waiting for Mary's auction to finish...")
 
 for i in range(MARY_AUCTION_DURATION_IN_SECONDS):
-    time.sleep(i+1)
+    time.sleep(1)
     print("Time Passed: "+str(i+1)+" seconds")
 
 nick_response=requests.get(auctions_url+str(marys_auction["id"])+"/", headers= {'Authorization':'Bearer '+nick_token})
-print("\nResponse of Nick GET-ting Mary's auction to see if he's won: ")
+print("\nResponse of Nick GET-ing Mary's auction to see if he's won: ")
 print(prettyResponse(nick_response))
 
 print("\n############-TEST CASE 12-############")
