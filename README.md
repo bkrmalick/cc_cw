@@ -2,7 +2,7 @@
 
 Auctioning system as an REST API Implemented in Django! 
 
-<img src="https://www.djangoproject.com/m/img/logos/django-logo-negative.png" width="100" height="50">
+<img src="https://www.djangoproject.com/m/img/logos/django-logo-negative.png" width="200" height="100">
 
 It has the following functionalities: 
 
