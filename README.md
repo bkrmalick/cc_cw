@@ -1,6 +1,6 @@
 # Cloud Software as a Service - Auctioning system
 
-Auctioning system as an REST API Implemented in Django! 
+Auctioning system as an REST API Implemented in Django REST framework! 
 
 <img src="https://www.djangoproject.com/m/img/logos/django-logo-negative.png" width="200" height="100">
 
