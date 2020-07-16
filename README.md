@@ -12,3 +12,6 @@ It has the following functionalities:
 - Authorised users could bid for an item while it is in an auction.
 - Highest bid authorised user wins the item after the end of the auction.
 - Authorised users could browse for bidding history of an item that is sold.
+
+
+For more info please see high level brief [here](Brief.pdf)
